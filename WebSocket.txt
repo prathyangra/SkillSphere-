@@ -1,0 +1,317 @@
+ WebSocket-based real-time chat and notifications system for SkillSphere using Socket.io for both the Node.js backend and React frontend. We will also ensure WebSocket authentication with JWT.
+
+### Backend (Node.js with Express)
+
+**1. Install Socket.io**
+
+First, install Socket.io in the backend:
+
+```bash
+npm install socket.io
+```
+
+**2. Modify Backend to Support WebSockets**
+
+**src/server.js**
+```javascript name=src/server.js
+const app = require('./app');
+const http = require('http');
+const socketService = require('./services/socketService');
+
+const server = http.createServer(app);
+const io = socketService.init(server);
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+```
+
+**src/services/socketService.js**
+```javascript name=src/services/socketService.js
+const socketIo = require('socket.io');
+const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/config');
+
+let io;
+
+const init = (server) => {
+  io = socketIo(server);
+
+  io.use((socket, next) => {
+    const token = socket.handshake.query.token;
+    if (token) {
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) return next(new Error('Authentication error'));
+        socket.user = decoded;
+        next();
+      });
+    } else {
+      next(new Error('Authentication error'));
+    }
+  });
+
+  io.on('connection', (socket) => {
+    console.log('New client connected');
+
+    socket.on('message', (data) => {
+      io.emit('message', data);
+    });
+
+    socket.on('notification', (data) => {
+      io.emit('notification', data);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
+    });
+  });
+
+  return io;
+};
+
+module.exports = { init };
+```
+
+**src/controllers/chatController.js**
+```javascript name=src/controllers/chatController.js
+const { io } = require('../services/socketService');
+
+const sendMessage = (req, res) => {
+  io.emit('message', req.body);
+  res.send({ message: 'Message sent.' });
+};
+
+module.exports = { sendMessage };
+```
+
+**src/routes/chat.js**
+```javascript name=src/routes/chat.js
+const express = require('express');
+const { sendMessage } = require('../controllers/chatController');
+const auth = require('../middleware/auth');
+const router = express.Router();
+
+router.post('/send', auth, sendMessage);
+
+module.exports = router;
+```
+
+**src/controllers/notificationsController.js**
+```javascript name=src/controllers/notificationsController.js
+const { io } = require('../services/socketService');
+
+const sendNotification = (req, res) => {
+  const { type, recipient, message } = req.body;
+  io.emit('notification', { type, recipient, message });
+  res.send({ message: 'Notification sent.' });
+};
+
+module.exports = { sendNotification };
+```
+
+**src/routes/notifications.js**
+```javascript name=src/routes/notifications.js
+const express = require('express');
+const { sendNotification } = require('../controllers/notificationsController');
+const auth = require('../middleware/auth');
+const router = express.Router();
+
+router.post('/send', auth, sendNotification);
+
+module.exports = router;
+```
+
+### Frontend (React with Socket.io-client)
+
+**1. Install Socket.io-client**
+
+First, install Socket.io-client in the frontend:
+
+```bash
+npm install socket.io-client
+```
+
+**2. Modify Frontend to Support WebSockets**
+
+**services/chatService.js**
+```javascript name=services/chatService.js
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = 'http://localhost:5000';
+const token = localStorage.getItem('token');
+const socket = io(SOCKET_URL, { query: { token } });
+
+const sendMessage = (message) => {
+  socket.emit('message', message);
+};
+
+const onMessage = (callback) => {
+  socket.on('message', (message) => {
+    callback(message);
+  });
+};
+
+const disconnect = () => {
+  socket.disconnect();
+};
+
+export default {
+  sendMessage,
+  onMessage,
+  disconnect,
+};
+```
+
+**services/notificationService.js**
+```javascript name=services/notificationService.js
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = 'http://localhost:5000';
+const token = localStorage.getItem('token');
+const socket = io(SOCKET_URL, { query: { token } });
+
+const onNotification = (callback) => {
+  socket.on('notification', (notification) => {
+    callback(notification);
+  });
+};
+
+const disconnect = () => {
+  socket.disconnect();
+};
+
+export default {
+  onNotification,
+  disconnect,
+};
+```
+
+**components/Chat.js**
+```javascript name=components/Chat.js
+import { useState, useEffect, useRef } from 'react';
+import chatService from '../services/chatService';
+
+const Chat = () => {
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    chatService.onMessage((msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
+    });
+
+    return () => {
+      chatService.disconnect();
+    };
+  }, []);
+
+  const sendMessage = () => {
+    chatService.sendMessage(message);
+    setMessages((prevMessages) => [...prevMessages, message]);
+    setMessage('');
+  };
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Chat</h1>
+      <div className="bg-white p-4 rounded shadow mb-8">
+        <div className="max-h-80 overflow-y-auto">
+          {messages.map((msg, index) => (
+            <div key={index} className="mb-4">
+              <p>{msg}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex mt-4">
+          <input
+            type="text"
+            className="w-full p-2 border border-gray-300 rounded mr-4"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button
+            onClick={sendMessage}
+            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Chat;
+```
+
+**components/Notifications.js**
+```javascript name=components/Notifications.js
+import { useState, useEffect } from 'react';
+import notificationService from '../services/notificationService';
+
+const Notifications = () => {
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    notificationService.onNotification((notification) => {
+      setNotifications((prevNotifications) => [...prevNotifications, notification]);
+    });
+
+    return () => {
+      notificationService.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Notifications</h1>
+      <ul className="space-y-4">
+        {notifications.map((notification, index) => (
+          <li key={index} className="bg-white p-4 rounded shadow">
+            <p>Type: {notification.type}</p>
+            <p>Message: {notification.message}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Notifications;
+```
+
+Add the above components to their respective pages:
+
+**pages/chat.js**
+```javascript name=pages/chat.js
+import Chat from '../components/Chat';
+
+const ChatPage = () => {
+  return (
+    <div>
+      <Chat />
+    </div>
+  );
+};
+
+export default ChatPage;
+```
+
+**pages/notifications.js**
+```javascript name=pages/notifications.js
+import Notifications from '../components/Notifications';
+
+const NotificationsPage = () => {
+  return (
+    <div>
+      <Notifications />
+    </div>
+  );
+};
+
+export default NotificationsPage;
+```
+
+This setup will allow users to send and receive messages in real-time and receive real-time notifications for bookings and messages using WebSockets with Socket.io. If you need any further assistance or modifications, feel free to ask!

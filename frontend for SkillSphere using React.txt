@@ -1,0 +1,614 @@
+frontend for SkillSphere using React.js (Next.js) with Tailwind CSS, React Router for navigation, and Zustand/Redux for state management. The frontend will include the specified UI components and integrate with the backend API.
+
+### 1. Project Setup
+
+First, let's initialize a new Next.js project and install the necessary dependencies:
+
+```bash
+# Create a new Next.js project
+npx create-next-app@latest SkillSphere-frontend
+cd SkillSphere-frontend
+
+# Install necessary dependencies
+npm install tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+# Install additional dependencies
+npm install axios react-router-dom zustand @reduxjs/toolkit react-redux socket.io-client
+```
+
+Next, let's configure Tailwind CSS:
+
+**tailwind.config.js**
+```javascript name=tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+```
+
+**styles/globals.css**
+```css name=styles/globals.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### 2. Folder Structure
+
+Let's create the folder structure for the project:
+
+```bash
+mkdir components contexts hooks pages services
+touch contexts/authContext.js
+touch contexts/socketContext.js
+touch services/api.js
+touch services/authService.js
+touch services/skillService.js
+touch services/bookingService.js
+touch services/transactionService.js
+touch services/chatService.js
+touch services/notificationService.js
+```
+
+### 3. Authentication Pages
+
+**pages/auth/login.js**
+```javascript name=pages/auth/login.js
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import axios from 'axios';
+
+const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('/api/auth/login', { email, password });
+      localStorage.setItem('token', response.data.token);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label className="block text-gray-700">Email</label>
+            <input
+              type="email"
+              className="w-full p-2 border border-gray-300 rounded mt-1"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700">Password</label>
+            <input
+              type="password"
+              className="w-full p-2 border border-gray-300 rounded mt-1"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
+```
+
+**pages/auth/signup.js**
+```javascript name=pages/auth/signup.js
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import axios from 'axios';
+
+const SignupPage = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/auth/register', { name, email, password });
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Signup failed:', error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-6 text-center">Signup</h2>
+        <form onSubmit={handleSignup}>
+          <div className="mb-4">
+            <label className="block text-gray-700">Name</label>
+            <input
+              type="text"
+              className="w-full p-2 border border-gray-300 rounded mt-1"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700">Email</label>
+            <input
+              type="email"
+              className="w-full p-2 border border-gray-300 rounded mt-1"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700">Password</label>
+            <input
+              type="password"
+              className="w-full p-2 border border-gray-300 rounded mt-1"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          >
+            Signup
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default SignupPage;
+```
+
+### 4. Dashboard
+
+**pages/dashboard.js**
+```javascript name=pages/dashboard.js
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import axios from 'axios';
+
+const DashboardPage = () => {
+  const [skills, setSkills] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await axios.get('/api/skills');
+        setSkills(response.data);
+      } catch (error) {
+        console.error('Failed to fetch skills:', error);
+      }
+    };
+
+    const fetchBookings = async () => {
+      try {
+        const response = await axios.get('/api/bookings');
+        setBookings(response.data);
+      } catch (error) {
+        console.error('Failed to fetch bookings:', error);
+      }
+    };
+
+    fetchSkills();
+    fetchBookings();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Dashboard</h1>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Available Skills</h2>
+        <ul className="space-y-4">
+          {skills.map((skill) => (
+            <li key={skill.id} className="bg-white p-4 rounded shadow">
+              <h3 className="text-xl font-bold">{skill.title}</h3>
+              <p>{skill.description}</p>
+              <p className="text-gray-500">Mentor: {skill.mentor.name}</p>
+              <p className="text-gray-500">Price: {skill.priceInTokens} tokens</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Booking History</h2>
+        <ul className="space-y-4">
+          {bookings.map((booking) => (
+            <li key={booking.id} className="bg-white p-4 rounded shadow">
+              <p>Skill: {booking.skill.title}</p>
+              <p>Mentor: {booking.mentor.name}</p>
+              <p>Date: {new Date(booking.date).toLocaleDateString()}</p>
+              <p>Status: {booking.status}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
+```
+
+### 5. Skill Search & Management
+
+**components/SkillSearch.js**
+```javascript name=components/SkillSearch.js
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const SkillSearch = () => {
+  const [skills, setSkills] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [category, setCategory] = useState('');
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await axios.get('/api/skills');
+        setSkills(response.data);
+      } catch (error) {
+        console.error('Failed to fetch skills:', error);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  const filteredSkills = skills.filter(
+    (skill) =>
+      skill.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (category ? skill.category === category : true)
+  );
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Skill Search</h1>
+      <div className="mb-8">
+        <input
+          type="text"
+          className="w-full p-2 border border-gray-300 rounded mb-4"
+          placeholder="Search skills..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="w-full p-2 border border-gray-300 rounded"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="">All Categories</option>
+          <option value="Programming">Programming</option>
+          <option value="Design">Design</option>
+          <option value="Marketing">Marketing</option>
+        </select>
+      </div>
+      <ul className="space-y-4">
+        {filteredSkills.map((skill) => (
+          <li key={skill.id} className="bg-white p-4 rounded shadow">
+            <h3 className="text-xl font-bold">{skill.title}</h3>
+            <p>{skill.description}</p>
+            <p className="text-gray-500">Mentor: {skill.mentor.name}</p>
+            <p className="text-gray-500">Price: {skill.priceInTokens} tokens</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default SkillSearch;
+```
+
+Add the above component to a page:
+
+**pages/skills.js**
+```javascript name=pages/skills.js
+import SkillSearch from '../components/SkillSearch';
+
+const SkillsPage = () => {
+  return (
+    <div>
+      <SkillSearch />
+    </div>
+  );
+};
+
+export default SkillsPage;
+```
+
+### 6. Booking System UI
+
+**components/BookingCalendar.js**
+```javascript name=components/BookingCalendar.js
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import enUS from 'date-fns/locale/en-US';
+
+const locales = {
+  'en-US': enUS,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
+
+const BookingCalendar = () => {
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await axios.get('/api/bookings');
+        const bookings = response.data.map((booking) => ({
+          title: booking.skill.title,
+          start: new Date(booking.date),
+          end: new Date(booking.date),
+        }));
+        setEvents(bookings);
+      } catch (error) {
+        console.error('Failed to fetch bookings:', error);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Booking Calendar</h1>
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+      />
+    </div>
+  );
+};
+
+export default BookingCalendar;
+```
+
+Add the above component to a page:
+
+**pages/bookings.js**
+```javascript name=pages/bookings.js
+import BookingCalendar from '../components/BookingCalendar';
+
+const BookingsPage = () => {
+  return (
+    <div>
+      <BookingCalendar />
+    </div>
+  );
+};
+
+export default BookingsPage;
+```
+
+### 7. Wallet & Transaction UI
+
+**components/Wallet.js**
+```javascript name=components/Wallet.js
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Wallet = () => {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      try {
+        const response = await axios.get('/api/transactions');
+        setBalance(response.data.balance);
+        setTransactions(response.data.transactions);
+      } catch (error) {
+        console.error('Failed to fetch wallet data:', error);
+      }
+    };
+
+    fetchWalletData();
+  }, []);
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Wallet</h1>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold">Balance: {balance} tokens</h2>
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Transaction History</h2>
+        <ul className="space-y-4">
+          {transactions.map((transaction) => (
+            <li key={transaction.id} className="bg-white p-4 rounded shadow">
+              <p>Type: {transaction.type}</p>
+              <p>Amount: {transaction.amount} tokens</p>
+              <p>Date: {new Date(transaction.timestamp).toLocaleDateString()}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default Wallet;
+```
+
+Add the above component to a page:
+
+**pages/wallet.js**
+```javascript name=pages/wallet.js
+import Wallet from '../components/Wallet';
+
+const WalletPage = () => {
+  return (
+    <div>
+      <Wallet />
+    </div>
+  );
+};
+
+export default WalletPage;
+```
+
+### 8. Real-time Chat UI
+
+**components/Chat.js**
+```javascript name=components/Chat.js
+import { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+
+const Chat = () => {
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState('');
+  const socketRef = useRef();
+
+  useEffect(() => {
+    socketRef.current = io();
+
+    socketRef.current.on('message', (msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, []);
+
+  const sendMessage = () => {
+    socketRef.current.emit('message', message);
+    setMessages((prevMessages) => [...prevMessages, message]);
+    setMessage('');
+  };
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Chat</h1>
+      <div className="bg-white p-4 rounded shadow mb-8">
+        <div className="max-h-80 overflow-y-auto">
+          {messages.map((msg, index) => (
+            <div key={index} className="mb-4">
+              <p>{msg}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex mt-4">
+          <input
+            type="text"
+            className="w-full p-2 border border-gray-300 rounded mr-4"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button
+            onClick={sendMessage}
+            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Chat;
+```
+
+Add the above component to a page:
+
+**pages/chat.js**
+```javascript name=pages/chat.js
+import Chat from '../components/Chat';
+
+const ChatPage = () => {
+  return (
+    <div>
+      <Chat />
+    </div>
+  );
+};
+
+export default ChatPage;
+```
+
+### 9. Notifications UI
+
+**components/Notifications.js**
+```javascript name=components/Notifications.js
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { io } from 'socket.io-client';
+
+const Notifications = () => {
+  const [notifications, setNotifications] = useState([]);
+  const socket = io();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get('/api/notifications');
+        setNotifications(response.data);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+
+    socket.on('notification', (notification) => {
+      setNotifications((prevNotifications) => [...prevNotifications, notification]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Notifications</h1>
+      <ul className="space-y-4">
+        {notifications.map((notification) => (
+          <li key={notification.id} className="bg-white p
