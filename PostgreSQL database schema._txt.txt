@@ -1,11 +1,5 @@
- PostgreSQL database schema 
-### 1. Users Table
-
-**src/models/user.js**
-```javascript name=src/models/user.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-
 const User = sequelize.define('User', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   name: { type: DataTypes.STRING, allowNull: false },
@@ -14,18 +8,11 @@ const User = sequelize.define('User', {
   passwordHash: { type: DataTypes.STRING, allowNull: false },
   tokenBalance: { type: DataTypes.INTEGER, defaultValue: 0 },
 });
-
 module.exports = User;
-```
 
-### 2. Skills Table
-
-**src/models/skill.js**
-```javascript name=src/models/skill.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./user');
-
 const Skill = sequelize.define('Skill', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   title: { type: DataTypes.STRING, allowNull: false },
@@ -34,21 +21,13 @@ const Skill = sequelize.define('Skill', {
   mentorId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' }, allowNull: false },
   priceInTokens: { type: DataTypes.INTEGER, allowNull: false },
 });
-
 Skill.belongsTo(User, { as: 'mentor', foreignKey: 'mentorId' });
-
 module.exports = Skill;
-```
 
-### 3. Bookings Table
-
-**src/models/booking.js**
-```javascript name=src/models/booking.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./user');
 const Skill = require('./skill');
-
 const Booking = sequelize.define('Booking', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' }, allowNull: false },
@@ -57,22 +36,14 @@ const Booking = sequelize.define('Booking', {
   date: { type: DataTypes.DATE, allowNull: false },
   status: { type: DataTypes.STRING, allowNull: false },
 });
-
 Booking.belongsTo(User, { as: 'user', foreignKey: 'userId' });
 Booking.belongsTo(User, { as: 'mentor', foreignKey: 'mentorId' });
 Booking.belongsTo(Skill, { as: 'skill', foreignKey: 'skillId' });
-
 module.exports = Booking;
-```
 
-### 4. Transactions Table
-
-**src/models/transaction.js**
-```javascript name=src/models/transaction.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./user');
-
 const Transaction = sequelize.define('Transaction', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' }, allowNull: false },
@@ -80,20 +51,12 @@ const Transaction = sequelize.define('Transaction', {
   amount: { type: DataTypes.INTEGER, allowNull: false },
   timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
-
 Transaction.belongsTo(User, { as: 'user', foreignKey: 'userId' });
-
 module.exports = Transaction;
-```
 
-### 5. Messages Table
-
-**src/models/message.js**
-```javascript name=src/models/message.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./user');
-
 const Message = sequelize.define('Message', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   senderId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' }, allowNull: false },
@@ -101,39 +64,22 @@ const Message = sequelize.define('Message', {
   content: { type: DataTypes.TEXT, allowNull: false },
   timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
-
 Message.belongsTo(User, { as: 'sender', foreignKey: 'senderId' });
 Message.belongsTo(User, { as: 'receiver', foreignKey: 'receiverId' });
-
 module.exports = Message;
-```
 
-### 6. Notifications Table
-
-**src/models/notification.js**
-```javascript name=src/models/notification.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./user');
-
 const Notification = sequelize.define('Notification', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' }, allowNull: false },
   type: { type: DataTypes.ENUM('Booking', 'Chat', 'Token'), allowNull: false },
   readStatus: { type: DataTypes.BOOLEAN, defaultValue: false },
 });
-
 Notification.belongsTo(User, { as: 'user', foreignKey: 'userId' });
-
 module.exports = Notification;
-```
 
-### Migrations
-
-Create migration files for each model:
-
-**migrations/202504010001-create-user.js**
-```javascript name=migrations/202504010001-create-user.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Users', {
@@ -147,15 +93,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Users');
   },
 };
-```
 
-**migrations/202504010002-create-skill.js**
-```javascript name=migrations/202504010002-create-skill.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Skills', {
@@ -169,15 +111,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Skills');
   },
 };
-```
 
-**migrations/202504010003-create-booking.js**
-```javascript name=migrations/202504010003-create-booking.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Bookings', {
@@ -191,15 +129,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Bookings');
   },
 };
-```
 
-**migrations/202504010004-create-transaction.js**
-```javascript name=migrations/202504010004-create-transaction.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Transactions', {
@@ -212,15 +146,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Transactions');
   },
 };
-```
 
-**migrations/202504010005-create-message.js**
-```javascript name=migrations/202504010005-create-message.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Messages', {
@@ -233,15 +163,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Messages');
   },
 };
-```
 
-**migrations/202504010006-create-notification.js**
-```javascript name=migrations/202504010006-create-notification.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Notifications', {
@@ -253,19 +179,11 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Notifications');
   },
 };
-```
 
-### Seed Scripts
-
-Create seed scripts to populate the database with initial data:
-
-**seeders/202504010001-seed-users.js**
-```javascript name=seeders/202504010001-seed-users.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.bulkInsert('Users', [
@@ -273,15 +191,11 @@ module.exports = {
       { name: 'Jane Smith', email: 'jane@example.com', role: 'Mentor', passwordHash: 'hashedpassword', tokenBalance: 200, createdAt: new Date(), updatedAt: new Date() },
     ]);
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('Users', null, {});
   },
 };
-```
 
-**seeders/202504010002-seed-skills.js**
-```javascript name=seeders/202504010002-seed-skills.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.bulkInsert('Skills', [
@@ -289,11 +203,7 @@ module.exports = {
       { title: 'Advanced Python', category: 'Programming', description: 'Master advanced Python concepts', mentorId: 2, priceInTokens: 100, createdAt: new Date(), updatedAt: new Date() },
     ]);
   },
-
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('Skills', null, {});
   },
 };
-```
-
-This should set up your PostgreSQL database schema for SkillSphere using Sequelize ORM, along with migration and seed scripts. 
