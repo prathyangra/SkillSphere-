@@ -1,11 +1,3 @@
-frontend for SkillSphere using React.js (Next.js) with Tailwind CSS, React Router for navigation, and Zustand/Redux for state management. The frontend will include the specified UI components and integrate with the backend API.
-
-### 1. Project Setup
-
-First, let's initialize a new Next.js project and install the necessary dependencies:
-
-```bash
-# Create a new Next.js project
 npx create-next-app@latest SkillSphere-frontend
 cd SkillSphere-frontend
 
@@ -15,13 +7,7 @@ npx tailwindcss init -p
 
 # Install additional dependencies
 npm install axios react-router-dom zustand @reduxjs/toolkit react-redux socket.io-client
-```
 
-Next, let's configure Tailwind CSS:
-
-**tailwind.config.js**
-```javascript name=tailwind.config.js
-/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -32,20 +18,13 @@ module.exports = {
   },
   plugins: [],
 };
-```
 
-**styles/globals.css**
 ```css name=styles/globals.css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 ```
 
-### 2. Folder Structure
-
-Let's create the folder structure for the project:
-
-```bash
 mkdir components contexts hooks pages services
 touch contexts/authContext.js
 touch contexts/socketContext.js
@@ -56,21 +35,14 @@ touch services/bookingService.js
 touch services/transactionService.js
 touch services/chatService.js
 touch services/notificationService.js
-```
 
-### 3. Authentication Pages
-
-**pages/auth/login.js**
-```javascript name=pages/auth/login.js
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -81,7 +53,6 @@ const LoginPage = () => {
       console.error('Login failed:', error);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
@@ -116,22 +87,16 @@ const LoginPage = () => {
     </div>
   );
 };
-
 export default LoginPage;
-```
 
-**pages/auth/signup.js**
-```javascript name=pages/auth/signup.js
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-
 const SignupPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
@@ -141,7 +106,6 @@ const SignupPage = () => {
       console.error('Signup failed:', error);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
@@ -185,23 +149,15 @@ const SignupPage = () => {
     </div>
   );
 };
-
 export default SignupPage;
-```
 
-### 4. Dashboard
-
-**pages/dashboard.js**
-```javascript name=pages/dashboard.js
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-
 const DashboardPage = () => {
   const [skills, setSkills] = useState([]);
   const [bookings, setBookings] = useState([]);
   const router = useRouter();
-
   useEffect(() => {
     const fetchSkills = async () => {
       try {
@@ -211,7 +167,6 @@ const DashboardPage = () => {
         console.error('Failed to fetch skills:', error);
       }
     };
-
     const fetchBookings = async () => {
       try {
         const response = await axios.get('/api/bookings');
@@ -220,11 +175,9 @@ const DashboardPage = () => {
         console.error('Failed to fetch bookings:', error);
       }
     };
-
     fetchSkills();
     fetchBookings();
   }, []);
-
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Dashboard</h1>
@@ -259,20 +212,12 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-```
-
-### 5. Skill Search & Management
-
-**components/SkillSearch.js**
-```javascript name=components/SkillSearch.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-
 const SkillSearch = () => {
   const [skills, setSkills] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('');
-
   useEffect(() => {
     const fetchSkills = async () => {
       try {
@@ -282,16 +227,13 @@ const SkillSearch = () => {
         console.error('Failed to fetch skills:', error);
       }
     };
-
     fetchSkills();
   }, []);
-
   const filteredSkills = skills.filter(
     (skill) =>
       skill.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (category ? skill.category === category : true)
   );
-
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Skill Search</h1>
@@ -327,16 +269,9 @@ const SkillSearch = () => {
     </div>
   );
 };
-
 export default SkillSearch;
-```
 
-Add the above component to a page:
-
-**pages/skills.js**
-```javascript name=pages/skills.js
 import SkillSearch from '../components/SkillSearch';
-
 const SkillsPage = () => {
   return (
     <div>
@@ -344,25 +279,17 @@ const SkillsPage = () => {
     </div>
   );
 };
-
 export default SkillsPage;
-```
 
-### 6. Booking System UI
-
-**components/BookingCalendar.js**
-```javascript name=components/BookingCalendar.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
-
 const locales = {
   'en-US': enUS,
 };
-
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -370,10 +297,8 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-
 const BookingCalendar = () => {
   const [events, setEvents] = useState([]);
-
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -388,10 +313,8 @@ const BookingCalendar = () => {
         console.error('Failed to fetch bookings:', error);
       }
     };
-
     fetchBookings();
   }, []);
-
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Booking Calendar</h1>
@@ -405,16 +328,9 @@ const BookingCalendar = () => {
     </div>
   );
 };
-
 export default BookingCalendar;
-```
 
-Add the above component to a page:
-
-**pages/bookings.js**
-```javascript name=pages/bookings.js
 import BookingCalendar from '../components/BookingCalendar';
-
 const BookingsPage = () => {
   return (
     <div>
@@ -422,21 +338,13 @@ const BookingsPage = () => {
     </div>
   );
 };
-
 export default BookingsPage;
-```
 
-### 7. Wallet & Transaction UI
-
-**components/Wallet.js**
-```javascript name=components/Wallet.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-
 const Wallet = () => {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
-
   useEffect(() => {
     const fetchWalletData = async () => {
       try {
@@ -447,10 +355,8 @@ const Wallet = () => {
         console.error('Failed to fetch wallet data:', error);
       }
     };
-
     fetchWalletData();
   }, []);
-
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Wallet</h1>
@@ -472,16 +378,9 @@ const Wallet = () => {
     </div>
   );
 };
-
 export default Wallet;
-```
 
-Add the above component to a page:
-
-**pages/wallet.js**
-```javascript name=pages/wallet.js
 import Wallet from '../components/Wallet';
-
 const WalletPage = () => {
   return (
     <div>
@@ -489,40 +388,28 @@ const WalletPage = () => {
     </div>
   );
 };
-
 export default WalletPage;
-```
 
-### 8. Real-time Chat UI
-
-**components/Chat.js**
-```javascript name=components/Chat.js
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const socketRef = useRef();
-
   useEffect(() => {
     socketRef.current = io();
-
     socketRef.current.on('message', (msg) => {
       setMessages((prevMessages) => [...prevMessages, msg]);
     });
-
     return () => {
       socketRef.current.disconnect();
     };
   }, []);
-
   const sendMessage = () => {
     socketRef.current.emit('message', message);
     setMessages((prevMessages) => [...prevMessages, message]);
     setMessage('');
   };
-
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Chat</h1>
@@ -552,16 +439,9 @@ const Chat = () => {
     </div>
   );
 };
-
 export default Chat;
-```
 
-Add the above component to a page:
-
-**pages/chat.js**
-```javascript name=pages/chat.js
 import Chat from '../components/Chat';
-
 const ChatPage = () => {
   return (
     <div>
@@ -569,22 +449,14 @@ const ChatPage = () => {
     </div>
   );
 };
-
 export default ChatPage;
-```
 
-### 9. Notifications UI
-
-**components/Notifications.js**
-```javascript name=components/Notifications.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const socket = io();
-
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -594,18 +466,14 @@ const Notifications = () => {
         console.error('Failed to fetch notifications:', error);
       }
     };
-
     fetchNotifications();
-
     socket.on('notification', (notification) => {
       setNotifications((prevNotifications) => [...prevNotifications, notification]);
     });
-
     return () => {
       socket.disconnect();
     };
   }, []);
-
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Notifications</h1>
