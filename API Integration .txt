@@ -1,14 +1,5 @@
-API Integration (Connect Frontend & Backend)
- 
-API service functions in React.js to connect with the SkillSphere backend using Axios for HTTP requests and Socket.io for real-time WebSocket connections.
-
-### 1. AuthService.js
-
-```javascript name=services/authService.js
 import axios from 'axios';
-
 const API_URL = 'http://localhost:5000/api/auth';
-
 const register = async (name, email, password) => {
   const response = await axios.post(`${API_URL}/register`, {
     name,
@@ -17,7 +8,6 @@ const register = async (name, email, password) => {
   });
   return response.data;
 };
-
 const login = async (email, password) => {
   const response = await axios.post(`${API_URL}/login`, {
     email,
@@ -28,35 +18,25 @@ const login = async (email, password) => {
   }
   return response.data;
 };
-
 const logout = () => {
   localStorage.removeItem('token');
 };
-
 const getCurrentUser = () => {
   return localStorage.getItem('token');
 };
-
 export default {
   register,
   login,
   logout,
   getCurrentUser,
 };
-```
 
-### 2. SkillService.js
-
-```javascript name=services/skillService.js
 import axios from 'axios';
-
 const API_URL = 'http://localhost:5000/api/skills';
-
 const getSkills = async () => {
   const response = await axios.get(API_URL);
   return response.data;
 };
-
 const addSkill = async (skill) => {
   const token = localStorage.getItem('token');
   const response = await axios.post(API_URL, skill, {
@@ -64,7 +44,6 @@ const addSkill = async (skill) => {
   });
   return response.data;
 };
-
 const updateSkill = async (id, skill) => {
   const token = localStorage.getItem('token');
   const response = await axios.put(`${API_URL}/${id}`, skill, {
@@ -72,21 +51,14 @@ const updateSkill = async (id, skill) => {
   });
   return response.data;
 };
-
 export default {
   getSkills,
   addSkill,
   updateSkill,
 };
-```
 
-### 3. BookingService.js
-
-```javascript name=services/bookingService.js
 import axios from 'axios';
-
 const API_URL = 'http://localhost:5000/api/bookings';
-
 const createBooking = async (booking) => {
   const token = localStorage.getItem('token');
   const response = await axios.post(API_URL, booking, {
@@ -94,7 +66,6 @@ const createBooking = async (booking) => {
   });
   return response.data;
 };
-
 const getBookings = async () => {
   const token = localStorage.getItem('token');
   const response = await axios.get(API_URL, {
@@ -102,20 +73,13 @@ const getBookings = async () => {
   });
   return response.data;
 };
-
 export default {
   createBooking,
   getBookings,
 };
-```
 
-### 4. WalletService.js
-
-```javascript name=services/walletService.js
 import axios from 'axios';
-
 const API_URL = 'http://localhost:5000/api/transactions';
-
 const checkBalance = async () => {
   const token = localStorage.getItem('token');
   const response = await axios.get(API_URL, {
@@ -123,7 +87,6 @@ const checkBalance = async () => {
   });
   return response.data.balance;
 };
-
 const earnTokens = async (amount) => {
   const token = localStorage.getItem('token');
   const response = await axios.post(
@@ -135,7 +98,6 @@ const earnTokens = async (amount) => {
   );
   return response.data;
 };
-
 const spendTokens = async (amount) => {
   const token = localStorage.getItem('token');
   const response = await axios.post(
@@ -147,53 +109,36 @@ const spendTokens = async (amount) => {
   );
   return response.data;
 };
-
 export default {
   checkBalance,
   earnTokens,
   spendTokens,
 };
-```
 
-### 5. ChatService.js
-
-```javascript name=services/chatService.js
 import { io } from 'socket.io-client';
-
 const SOCKET_URL = 'http://localhost:5000';
-
 const socket = io(SOCKET_URL);
-
 const sendMessage = (message) => {
   socket.emit('message', message);
 };
-
 const onMessage = (callback) => {
   socket.on('message', (message) => {
     callback(message);
   });
 };
-
 const disconnect = () => {
   socket.disconnect();
 };
-
 export default {
   sendMessage,
   onMessage,
   disconnect,
 };
-```
 
-### 6. NotificationService.js
-
-```javascript name=services/notificationService.js
 import axios from 'axios';
 import { io } from 'socket.io-client';
-
 const API_URL = 'http://localhost:5000/api/notifications';
 const SOCKET_URL = 'http://localhost:5000';
-
 const getNotifications = async () => {
   const token = localStorage.getItem('token');
   const response = await axios.get(API_URL, {
@@ -201,24 +146,17 @@ const getNotifications = async () => {
   });
   return response.data;
 };
-
 const socket = io(SOCKET_URL);
-
 const onNotification = (callback) => {
   socket.on('notification', (notification) => {
     callback(notification);
   });
 };
-
 const disconnect = () => {
   socket.disconnect();
 };
-
 export default {
   getNotifications,
   onNotification,
   disconnect,
 };
-```
-
-These service functions will handle the API calls and WebSocket connections to the SkillSphere backend. You can then use these services in your React components to interact with the backend. If you need any further assistance or modifications, feel free to ask!
