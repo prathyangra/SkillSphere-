@@ -1,20 +1,3 @@
-backend:
-
-1. **Project Setup**
-2. **Authentication System**
-3. **User Roles and RBAC**
-4. **Skill Management API**
-5. **Booking System API**
-6. **Token-based Transaction System**
-7. **Real-time Chat API**
-8. **Notifications System**
-9. **Database Configuration and Migrations**
-10. **Security Enhancements**
-11. **API Documentation**
-
-Let's start with the basic project setup and the initial structure:
-
-````bash
 # Initialize a new Node.js project
 mkdir SkillSphere
 cd SkillSphere
@@ -25,11 +8,7 @@ npm install express sequelize pg pg-hstore jsonwebtoken bcryptjs dotenv passport
 
 # Install development dependencies
 npm install --save-dev nodemon eslint
-````
 
-Next, let's create the initial folder structure and configuration files:
-
-````bash
 mkdir src
 mkdir src/config
 mkdir src/controllers
@@ -61,12 +40,7 @@ touch src/controllers/bookingsController.js
 touch src/controllers/transactionsController.js
 touch src/controllers/chatController.js
 touch src/controllers/notificationsController.js
-````
 
-### 1. Project Setup
-
-**src/app.js**
-```javascript name=src/app.js
 const express = require('express');
 const morgan = require('morgan');
 const rateLimiter = require('./middleware/rateLimiter');
@@ -102,30 +76,18 @@ sequelize.sync()
   .catch((err) => {
     console.error('Unable to connect to the database:', err);
   });
-
 module.exports = app;
-```
 
-**src/server.js**
-```javascript name=src/server.js
 const app = require('./app');
 const http = require('http');
 const socketService = require('./services/socketService');
-
 const server = http.createServer(app);
 const io = socketService.init(server);
-
 const PORT = process.env.PORT || 5000;
-
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-```
-
-**src/config/config.js**
-```javascript name=src/config/config.js
 require('dotenv').config();
-
 module.exports = {
   jwtSecret: process.env.JWT_SECRET,
   oauth: {
@@ -143,36 +105,21 @@ module.exports = {
     },
   },
 };
-```
-
-**src/config/database.js**
-```javascript name=src/config/database.js
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
-
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
   logging: false,
 });
-
 module.exports = { sequelize };
-```
 
-### 2. Authentication System (JWT & OAuth)
-
-Create the authentication middleware and controllers:
-
-**src/middleware/auth.js**
-```javascript name=src/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../config/config');
-
 module.exports = (req, res, next) => {
   const token = req.header('Authorization').replace('Bearer ', '');
   if (!token) {
     return res.status(401).send({ error: 'Access denied. No token provided.' });
   }
-
   try {
     const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;
@@ -181,15 +128,11 @@ module.exports = (req, res, next) => {
     res.status(400).send({ error: 'Invalid token.' });
   }
 };
-```
 
-**src/controllers/authController.js**
-```javascript name=src/controllers/authController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { jwtSecret } = require('../config/config');
-
 const register = async (req, res) => {
   const { name, email, password, role } = req.body;
   const user = new User({ name, email, password, role });
@@ -198,7 +141,6 @@ const register = async (req, res) => {
   const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret);
   res.status(201).send({ token });
 };
-
 const login = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ where: { email } });
@@ -208,43 +150,24 @@ const login = async (req, res) => {
   const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret);
   res.send({ token });
 };
-
 module.exports = { register, login };
-```
 
-**src/routes/auth.js**
-```javascript name=src/routes/auth.js
 const express = require('express');
 const { register, login } = require('../controllers/authController');
 const router = express.Router();
-
 router.post('/register', register);
 router.post('/login', login);
-
 module.exports = router;
-```
 
-### 3. User Roles and RBAC
-
-Define user roles in your user model and create middleware for role-based access control:
-
-**src/models/user.js**
-```javascript name=src/models/user.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-
 const User = sequelize.define('User', {
   name: { type: DataTypes.STRING, allowNull: false },
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
   password: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.ENUM('Learner', 'Mentor', 'Admin'), allowNull: false },
 });
-
 module.exports = User;
-```
-
-**src/middleware/rbac.js**
-```javascript name=src/middleware/rbac.js
 module.exports = (roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -253,24 +176,16 @@ module.exports = (roles) => {
     next();
   };
 };
-```
 
-### 4. Skill Management API
-
-**src/controllers/skillsController.js**
-```javascript name=src/controllers/skillsController.js
 const { Skill } = require('../models');
-
 const getSkills = async (req, res) => {
   const skills = await Skill.findAll();
   res.send(skills);
 };
-
 const addSkill = async (req, res) => {
   const skill = await Skill.create(req.body);
   res.status(201).send(skill);
 };
-
 const updateSkill = async (req, res) => {
   const skill = await Skill.findByPk(req.params.id);
   if (!skill) {
@@ -279,7 +194,6 @@ const updateSkill = async (req, res) => {
   await skill.update(req.body);
   res.send(skill);
 };
-
 const deleteSkill = async (req, res) => {
   const skill = await Skill.findByPk(req.params.id);
   if (!skill) {
@@ -288,42 +202,28 @@ const deleteSkill = async (req, res) => {
   await skill.destroy();
   res.send({ message: 'Skill deleted.' });
 };
-
 module.exports = { getSkills, addSkill, updateSkill, deleteSkill };
-```
 
-**src/routes/skills.js**
-```javascript name=src/routes/skills.js
 const express = require('express');
 const { getSkills, addSkill, updateSkill, deleteSkill } = require('../controllers/skillsController');
 const auth = require('../middleware/auth');
 const rbac = require('../middleware/rbac');
 const router = express.Router();
-
 router.get('/', getSkills);
 router.post('/', auth, rbac(['Mentor', 'Admin']), addSkill);
 router.put('/:id', auth, rbac(['Mentor', 'Admin']), updateSkill);
 router.delete('/:id', auth, rbac(['Mentor', 'Admin']), deleteSkill);
-
 module.exports = router;
-```
 
-### 5. Booking System API
-
-**src/controllers/bookingsController.js**
-```javascript name=src/controllers/bookingsController.js
 const { Booking } = require('../models');
-
 const getBookings = async (req, res) => {
   const bookings = await Booking.findAll();
   res.send(bookings);
 };
-
 const addBooking = async (req, res) => {
   const booking = await Booking.create(req.body);
   res.status(201).send(booking);
 };
-
 const updateBooking = async (req, res) => {
   const booking = await Booking.findByPk(req.params.id);
   if (!booking) {
@@ -332,7 +232,6 @@ const updateBooking = async (req, res) => {
   await booking.update(req.body);
   res.send(booking);
 };
-
 const deleteBooking = async (req, res) => {
   const booking = await Booking.findByPk(req.params.id);
   if (!booking) {
@@ -341,115 +240,69 @@ const deleteBooking = async (req, res) => {
   await booking.destroy();
   res.send({ message: 'Booking deleted.' });
 };
-
 module.exports = { getBookings, addBooking, updateBooking, deleteBooking };
-```
 
-**src/routes/bookings.js**
-```javascript name=src/routes/bookings.js
 const express = require('express');
 const { getBookings, addBooking, updateBooking, deleteBooking } = require('../controllers/bookingsController');
 const auth = require('../middleware/auth');
 const router = express.Router();
-
 router.get('/', auth, getBookings);
 router.post('/', auth, addBooking);
 router.put('/:id', auth, updateBooking);
 router.delete('/:id', auth, deleteBooking);
-
 module.exports = router;
-```
 
-### 6. Token-based Transaction System
-
-**src/controllers/transactionsController.js**
-```javascript name=src/controllers/transactionsController.js
 const { Transaction } = require('../models');
-
 const getTransactions = async (req, res) => {
   const transactions = await Transaction.findAll();
   res.send(transactions);
 };
-
 const addTransaction = async (req, res) => {
   const transaction = await Transaction.create(req.body);
   res.status(201).send(transaction);
 };
-
 module.exports = { getTransactions, addTransaction };
-```
 
-**src/routes/transactions.js**
-```javascript name=src/routes/transactions.js
 const express = require('express');
 const { getTransactions, addTransaction } = require('../controllers/transactionsController');
 const auth = require('../middleware/auth');
 const router = express.Router();
-
 router.get('/', auth, getTransactions);
 router.post('/', auth, addTransaction);
-
 module.exports = router;
-```
 
-### 7. Real-time Chat API
-
-**src/services/socketService.js**
-```javascript name=src/services/socketService.js
 const socketIo = require('socket.io');
-
 let io;
-
 const init = (server) => {
   io = socketIo(server);
-
   io.on('connection', (socket) => {
     console.log('New client connected');
-
     socket.on('message', (data) => {
       io.emit('message', data);
     });
-
     socket.on('disconnect', () => {
       console.log('Client disconnected');
     });
   });
-
   return io;
 };
-
 module.exports = { init };
-```
 
-**src/controllers/chatController.js**
-```javascript name=src/controllers/chatController.js
 const sendMessage = (req, res) => {
   const { io } = require('../services/socketService');
   io.emit('message', req.body);
   res.send({ message: 'Message sent.' });
 };
-
 module.exports = { sendMessage };
-```
 
-**src/routes/chat.js**
-```javascript name=src/routes/chat.js
 const express = require('express');
 const { sendMessage } = require('../controllers/chatController');
 const auth = require('../middleware/auth');
 const router = express.Router();
-
 router.post('/send', auth, sendMessage);
-
 module.exports = router;
-```
 
-### 8. Notifications System
-
-**src/services/emailService.js**
-```javascript name=src/services/emailService.js
 const nodemailer = require('nodemailer');
-
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -457,7 +310,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-
 const sendEmail = (to, subject, text) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -465,8 +317,7 @@ const sendEmail = (to, subject, text) => {
     subject,
     text,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
+transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error('Error sending email:', error);
     } else {
@@ -474,64 +325,38 @@ const sendEmail = (to, subject, text) => {
     }
   });
 };
-
 module.exports = { sendEmail };
-```
 
-**src/controllers/notificationsController.js**
-```javascript name=src/controllers/notificationsController.js
 const { sendEmail } = require('../services/emailService');
 const { io } = require('../services/socketService');
-
 const sendNotification = (req, res) => {
   const { type, recipient, message } = req.body;
-
   if (type === 'email') {
     sendEmail(recipient, 'Notification', message);
   } else if (type === 'websocket') {
     io.emit('notification', { recipient, message });
   }
-
   res.send({ message: 'Notification sent.' });
 };
-
 module.exports = { sendNotification };
-```
 
-**src/routes/notifications.js**
-```javascript name=src/routes/notifications.js
 const express = require('express');
 const { sendNotification } = require('../controllers/notificationsController');
 const auth = require('../middleware/auth');
 const router = express.Router();
-
 router.post('/send', auth, sendNotification);
-
 module.exports = router;
-```
 
-### 9. Database Configuration and Migrations
-
-Create your models and migrations for the database:
-
-**src/models/skill.js**
-```javascript name=src/models/skill.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-
 const Skill = sequelize.define('Skill', {
   name: { type: DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: false },
 });
-
 module.exports = Skill;
-```
 
-**src/models/booking.js**
-```javascript name=src/models/booking.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-
 const Booking = sequelize.define('Booking', {
   userId: { type: DataTypes.INTEGER, allowNull: false },
   mentorId: { type: DataTypes.INTEGER, allowNull: false },
@@ -539,32 +364,18 @@ const Booking = sequelize.define('Booking', {
   date: { type: DataTypes.DATE, allowNull: false },
   status: { type: DataTypes.STRING, allowNull: false },
 });
-
 module.exports = Booking;
-```
 
-**src/models/transaction.js**
-```javascript name=src/models/transaction.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-
 const Transaction = sequelize.define('Transaction', {
   userId: { type: DataTypes.INTEGER, allowNull: false },
   amount: { type: DataTypes.INTEGER, allowNull: false },
   type: { type: DataTypes.STRING, allowNull: false },
 });
-
 module.exports = Transaction;
-```
 
-### 10. Security Enhancements
-
-Add input validation and rate limiting:
-
-**src/utils/validator.js**
-```javascript name=src/utils/validator.js
 const { body, validationResult } = require('express-validator');
-
 const validate = (validations) => {
   return async (req, res, next) => {
     await Promise.all(validations.map((validation) => validation.run(req)));
@@ -575,32 +386,18 @@ const validate = (validations) => {
     res.status(400).json({ errors: errors.array() });
   };
 };
-
 module.exports = validate;
-```
 
-**src/middleware/rateLimiter.js**
-```javascript name=src/middleware/rateLimiter.js
 const rateLimit = require('express-rate-limit');
-
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
-
 module.exports = limiter;
-```
 
-### 11. API Documentation
-
-Use Swagger for API documentation:
-
-**src/app.js** (Add Swagger setup)
-```javascript name=src/app.js
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: '3.0.0',
@@ -617,8 +414,7 @@ const swaggerOptions = {
   },
   apis: ['./src/routes/*.js'],
 };
-
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-```
+
 
